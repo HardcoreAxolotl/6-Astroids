@@ -13,27 +13,8 @@ void Player::look_at(float x, float y) {
     float delta_y = y - _hitbox.y;
 
     // Convert relative vectors to an absolute tracking angle
-    angle = std::atan2(delta_y, delta_x);
+    _angle = std::atan2(delta_y, delta_x);
 }
-
-void Player::shoot() {
-    auto it = std::find_if(bullets.begin(), bullets.end(), [](const Bullet& b) {
-        return !b.active; 
-    });
-
-    if (it != bullets.end() && !it->active) {
-        float bullet_speed = 400.0f; // 400 pixels per second
-
-        it->spawn(
-            SDL_FPoint(_hitbox.x + _hitbox.w / 2.0f + cosf(angle) * 32.0f, 
-            _hitbox.y + _hitbox.h / 2.0f + sinf(angle) * 32.0f),
-            SDL_FPoint(cosf(angle) * bullet_speed, 
-            sinf(angle) * bullet_speed),
-            angle
-        );
-    }
-}
-
 
 void Player::move(float delta_time) {
     _hitbox.x += _accel.x * delta_time;
@@ -52,8 +33,8 @@ void Player::move(float delta_time) {
         _hitbox.y = 640+32;
     }
 
-    _accel.x -= std::copysign(_deccel_spd, _accel.x);
-    _accel.y -= std::copysign(_deccel_spd, _accel.y);
+    _accel.x -= std::copysign<float>(_deccel_spd, _accel.x);
+    _accel.y -= std::copysign<float>(_deccel_spd, _accel.y);
 }
 
 void Player::input() {
@@ -83,33 +64,24 @@ void Player::update(SDL_Renderer *renderer, float delta_time) {
 
     look_at(mx, my);
 
-    if (shoot_timer > 0) shoot_timer--;
+    if (shoot_timer > 0) shoot_timer -= delta_time;
     if ((m_state & SDL_BUTTON_MASK(SDL_BUTTON_LEFT)) && (shoot_timer <= 0)) {
-        shoot();
+        shooting = true;
         shoot_timer = shoot_cooldown;
     }
+    else shooting = false;
 
     // Move Player
     input();
     move(delta_time);
     _sprite.position(_hitbox.x + _hitbox.w / 2, _hitbox.y + _hitbox.h / 2);
-
-    // Update Bullets
-    for(auto &bullet : bullets) {
-        if (bullet.active) bullet.update(delta_time);
-    }
 }
 
 
 void Player::render(SDL_Renderer *renderer, bool debug) {
-    for(auto &bullet : bullets) {
-        if (bullet.active) bullet.render(renderer, debug);
-    }
+
 
     if (debug) {
-        // Hitbox Display
-        // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-        
         // Hurtbox Display
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
         SDL_RenderRect(renderer, &_hitbox);
@@ -118,11 +90,11 @@ void Player::render(SDL_Renderer *renderer, bool debug) {
 
         filledCircleRGBA(
             renderer, 
-            _hitbox.x+_hitbox.w/2+cosf(angle)*32, 
-            _hitbox.y+_hitbox.h/2+sinf(angle)*32, 
+            _hitbox.x+_hitbox.w/2+cosf(_angle)*32,
+            _hitbox.y+_hitbox.h/2+sinf(_angle)*32,
             4, 
             255, 0, 255, 255
         );
     }
-    _sprite.render(renderer, angle * (180.0f / M_PI)); // need to multiplie by (180.0f / M_PI) for some reason
+    _sprite.render(renderer, _angle * (180.0f / M_PI)); // need to multiplie by (180.0f / M_PI) for some reason
 }

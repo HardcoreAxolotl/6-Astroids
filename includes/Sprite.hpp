@@ -23,6 +23,24 @@ public:
         SDL_GetTextureSize(_tex, &_rect.w, &_rect.h);
     }
 
+    // Accessors and helpers
+    SDL_Texture* texture() const { return _tex; }
+    bool has_texture() const { return _tex != nullptr; }
+
+    // Comparisons
+    bool operator==(const Sprite& other) const { return _tex == other._tex; }
+    bool operator!=(const Sprite& other) const { return _tex != other._tex; }
+    bool operator==(SDL_Texture* tex) const { return _tex == tex; }
+    bool operator!=(SDL_Texture* tex) const { return _tex != tex; }
+
+    // Allow boolean checks like: if (sprite) / if (!sprite)
+    explicit operator bool() const { return _tex != nullptr; }
+
+    void set_size(float width, float height) {
+        _rect.w = width;
+        _rect.h = height;
+    }
+
     // set position
     void position(float x, float y) {
         _rect.x = x;

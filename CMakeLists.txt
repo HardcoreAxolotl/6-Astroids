@@ -21,6 +21,15 @@ add_executable(Astroids
     sources/Player.cpp
     includes/Bullet.hpp
     sources/Bullet.cpp
+        sources/Astroid.cpp
+        includes/Astroid.hpp
+        includes/AstroidManager.hpp
+        sources/AstroidManager.cpp
+        sources/BulletManager.cpp
+        includes/BulletManager.hpp
+        includes/main.hpp
+        includes/AstroidExt.hpp
+        includes/util.hpp
 )
 
 target_include_directories(Astroids PUBLIC

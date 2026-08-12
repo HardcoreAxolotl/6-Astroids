@@ -1,2 +1,9 @@
-build
-.cache
+# CMake build output (VS Code / CLion)
+build/
+build-*/
+cmake-build-*/
+out/
+
+# CMake tooling cache
+.cache/
+.idea/

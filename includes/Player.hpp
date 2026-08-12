@@ -9,7 +9,7 @@ class Player {
     // Player
     Sprite    _sprite;
     SDL_FRect _hitbox;
-    float angle = 0;
+    float _angle = 0;
 
     // Movement
     SDL_Point _accel{};
@@ -18,23 +18,35 @@ class Player {
     float _max_spd = 300.f;
 
     // Shooting
-    std::array<Bullet, 1000> bullets;
-    int shoot_cooldown = 30; // frames
-    int shoot_timer = 0; // frames 
+    float shoot_cooldown = 0.5f; // seconds
+    float shoot_timer = 0.f; // seconds
+    bool shooting = false;
 
     void look_at(float x, float y);
 
     void move(float delta_time);
 
     void input();
-
-    void shoot();
 public:
     Player() = default;
     Player(
         Sprite sprite,
         float x, float y
     );
+
+    bool is_shooting() const {
+        return shooting;
+    }
+
+    SDL_FPoint position() const {
+        return {_hitbox.x, _hitbox.y};
+    }
+    SDL_FPoint size() {
+        return {_hitbox.w, _hitbox.h};
+    }
+    float angle() {
+        return _angle;
+    }
 
     void update(SDL_Renderer *renderer, float delta_time);
 

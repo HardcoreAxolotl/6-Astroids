@@ -1,47 +1,67 @@
-#include "Bullet.hpp"
-#include "Player.hpp"
+#include <main.hpp>
+
 #define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_video.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3_image/SDL_image.h>
+#include <string>
+#include <vector>
+
+#include "Astroid.hpp"
+#include "AstroidManager.hpp"
 #include "Player.hpp"
-#include <SDL3/SDL_mouse.h>
+#include "Bullet.hpp"
+#include "BulletManager.hpp"
 
-struct AppState {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-
-    bool running;
-    Uint64 last_time = 0;
-    Uint64 frequency = 0;
-    Player player;
-};
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
+    // Init SDL3
     if (!SDL_Init(SDL_INIT_VIDEO)) {
+        SDL_Log("SDL_Init failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
+    // Setup metadata
     SDL_SetAppMetadata("Astroids", "1.0", "dev.roboticaxolotl.astorids");
 
-    AppState *state = static_cast<AppState *>(SDL_calloc(1, sizeof(AppState)));    
+    // Setup state
+    auto *state = new AppState();
     if (!state) {
+        SDL_Log("Failed to allocate AppState");
         return SDL_APP_FAILURE;
     }
     *appstate = state;
 
+    // Create window & renderer
     if (!SDL_CreateWindowAndRenderer("Astroids", 640, 640, SDL_WINDOW_RESIZABLE, &state->window, &state->renderer)) {
+        SDL_Log("SDL_CreateWindowAndRenderer failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
+    // Set the renderer size to 640x640
     SDL_SetRenderLogicalPresentation(state->renderer, 640, 640, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
-    auto bullet_texture = Sprite(IMG_LoadTexture(state->renderer, "assets/sprites/bullet.png"));
+    // Load bullet texture
+    SDL_Texture *bullet_tex = IMG_LoadTexture(state->renderer, "assets/sprites/bullet.png");
+    auto bullet_texture = Sprite(bullet_tex);
     Bullet::init(bullet_texture);
-    state->player = Player(Sprite(IMG_LoadTexture(state->renderer, "assets/sprites/player.png")), 100, 100);
+
+    // Setup player
+    SDL_Texture *player_tex = IMG_LoadTexture(state->renderer, "assets/sprites/player.png");
+    state->player = Player(Sprite(player_tex), 320, 320);
+
     state->last_time = SDL_GetPerformanceCounter();
     state->frequency = SDL_GetPerformanceFrequency();
+
+    // Astroid sprites
+    SDL_Texture *big_tex = IMG_LoadTexture(state->renderer, "assets/sprites/big_astroid.png");
+    SDL_Texture *small_tex = IMG_LoadTexture(state->renderer, "assets/sprites/small_astroid.png");
+
+    state->astroid_manager = AstroidManager(
+        new Sprite(big_tex),
+        new Sprite(small_tex)
+    );
 
     return SDL_APP_CONTINUE;
 }
@@ -49,6 +69,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 SDL_AppResult SDL_AppIterate(void *appstate) {
     AppState *state = (AppState *)appstate;
     auto renderer = state->renderer;
+    auto player = state->player;
+    auto bullet_manager = state->bullet_manager;
+    auto astroid_manager = state->astroid_manager;
 
     Uint64 current_time = SDL_GetPerformanceCounter();
     Uint64 frameElapsedTime = current_time - state->last_time;
@@ -63,23 +86,21 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     total += delta_time;
     frames++;
 
-    if (frames == 300)
+    // Calculate FPS and Bullet Count every 6000 frames
+    if (frames == 6000)
     {
-        SDL_Log("Average FPS: %.1f", frames / total);
+        // Change the title
+        const std::string title = "Astroids | FPS: " + std::to_string(frames / total) + " | Bullets: " + std::to_string(Bullet::bullet_count) + " | Astroids: " + std::to_string(AstroidManager::astroid_count);
+        SDL_SetWindowTitle(state->window, title.c_str());
         total = 0.0f;
         frames = 0;
     }
 
-    state->player.update(renderer, delta_time);
+    // Update
+    Update(state, delta_time);
 
-    // Clear screen to blue
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-    SDL_RenderClear(renderer);
-
-    state->player.render(renderer, true);
-
-    // Present the frame
-    SDL_RenderPresent(renderer);
+    // Render
+    Render(state, true);
 
     return SDL_APP_CONTINUE;
 }
