@@ -18,7 +18,7 @@ class Player {
     float _max_spd = 300.f;
 
     // Shooting
-    float shoot_cooldown = 0.5f; // seconds
+    float shoot_cooldown = 0.05f; // seconds
     float shoot_timer = 0.f; // seconds
     bool shooting = false;
 
